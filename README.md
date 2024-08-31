@@ -1,16 +1,42 @@
-# schedule_v2
+# Расписание ТулГУ
 
-Вторая попытка в расписание
+Приложение для просмотра расписания занятий в ТулГУ, оно позволяет легко и быстро узнать актуальное расписание.
+Приложение создано на фреймворке Flutter и весь исходный код находится в открытом доступе
 
-## Getting Started
+## Особенности
 
-This project is a starting point for a Flutter application.
+- Просмотр расписание без подключению к интернету
+- Обновление расписание при наличии расписания
+- Красивый интерфейс без лишних элементов
+- Приложение ___не собирает___ никакой телеметрии
 
-A few resources to get you started if this is your first Flutter project:
+## Использование
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+После установки на устройство, при первом запуске появится диалоговое окно в котором есть поле для ввода номера группы. Номер группы следует вводить так же, как на официальном сайте, без пробелов и строчными буквами (если они есть).
+В дальнейшем изменить номер группы можно, нажав на значок шестерёнки в верхнем правом углу приложения.
+Так же возможно получать расписание для конкретных аудиторий вводя номер аудитории в формате "1-414", "Гл.-402"
+## Установка
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Использование готового apk файла:
+
+1. Скачайте apk файл из вкладки [releases](https://github.com/Handriman/TulGU_Shedule/releases)
+2. Разрешите установку приложений из неизвестных источников в настройках вашего устройства
+3. Установите приложение (Приложение проходит проверку на угрозы от Google на моем устройстве)
+### Сборка из исходного кода
+
+1. Установите [Dart sdk](https://dart.dev/get-dart)
+2. Установите [Flutter sdk](https://docs.flutter.dev/get-started/install)
+3. Установите [git](https://git-scm.com/downloads)
+4. Клонируйте репозиторий командой
+```
+git clone https://github.com/Handriman/TulGU_Shedule.git
+```
+5. Перейдите в директорию проекта
+```
+cd TulGU_Schedule
+```
+6. Запустите команду сборки
+```
+flutter build apk
+```
+7. Собранный apk файл находится в "TulGU_Schedule/build/app/outputs/flutter-apk"

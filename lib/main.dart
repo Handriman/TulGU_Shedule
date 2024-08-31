@@ -229,10 +229,18 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
 
               child: TextField(
+                decoration:  InputDecoration(
 
-                decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.onInverseSurface,
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.all(Radius.circular(25)),
+                  ),
                   isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                   hintText: "Найди нужные пары!",
+
                 ),
                 controller: _controller,
               ),

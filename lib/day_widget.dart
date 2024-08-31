@@ -97,7 +97,6 @@ List<Widget> buildDay(Map<String, List<Schedule>> schedule, List<String> keys, i
 Widget lesson(Schedule schedule, bool isDark) {
 
 
-  // final detail = "${schedule.discipline}\n${schedule.kow}\n${schedule.prep ?? "Неизвестно"}";
 
   final detail = "${schedule.discipline}\n${schedule.kow}\n${schedule.prep ?? "Неизвестно"}";
   final color = colorize(schedule.kow, isDark); // Оптимизация: сохранение цвета в переменную
@@ -185,14 +184,22 @@ Widget buildDate(List<String> keys, int index, bool isDark, Color color){
 
   // Оптимизация: вычисление цвета с учетом прозрачности
   final backgroundColor = isDark
-      ? colorScheme.primary.withAlpha(50)
-      : colorScheme.primary.withAlpha(30);
+      ? colorScheme.secondaryContainer
+      : colorScheme.secondaryContainer;
+  final shadowColor = colorScheme.shadow.withOpacity(0.2);
 
   return ListTile(
     title: DecoratedBox(
       decoration: BoxDecoration(
+
         color: backgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(20)), // Сделали const
+        boxShadow: [BoxShadow(
+          color: shadowColor, // Цвет тени
+          spreadRadius: 0.5, // Насколько сильно распространяется тень
+          blurRadius: 5, // Насколько сильно размыта тень
+          offset: const Offset(0, 0), // Смещение тени
+        )],
       ),
       child: Padding(
         padding: const EdgeInsets.all(5), // Используем Padding вместо Container
