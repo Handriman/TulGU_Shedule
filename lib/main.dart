@@ -1,162 +1,583 @@
+import 'dart:math';
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'schedule_classes.dart';
-import 'schedule_transform.dart';
-import 'search_deligate.dart';
-import 'date_work.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'classes.dart';
+import 'fetch.dart';
+import 'dayWidget.dart';
+
+const List<String> list = <String>['Системная', 'Темная', 'Светлая'];
+const List<Widget> Wlist = <Widget>[
+  Icon(Icons.brightness_4),
+  Icon(Icons.brightness_3_outlined),
+  Icon(Icons.light_mode),
+];
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+
+  static _MyAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>()!;
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+  Color _themeColor = Colors.deepPurple;
+
+  void initState() {
+    super.initState();
+    _loadThemeSettings(); // Загружаем сохранённые настройки
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: _themeColor),
+        brightness: Brightness.light,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: _themeColor, brightness: Brightness.dark),
+        brightness: Brightness.dark,
+      ),
+      themeMode: _themeMode,
+      home: MyHomePage(
+        title: 'Flutter Demo Home Page',
+        outerTheme: _themeMode,
+        color: _themeColor,
+      ),
     );
+  }
+
+  Future<void> _loadThemeSettings() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Загружаем цветовую схему
+    int? colorValue = prefs.getInt('themeColor');
+    if (colorValue != null) {
+      _themeColor = Color(colorValue);
+    }
+
+    // Загружаем тему
+    String? themeModeStr = prefs.getString('themeMode');
+    if (themeModeStr != null) {
+      _themeMode = ThemeMode.values.firstWhere(
+        (e) => e.toString() == themeModeStr,
+        orElse: () => ThemeMode.system,
+      );
+    }
+
+    setState(() {});
+  }
+
+  Future<void> _saveThemeSettings() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeColor', _themeColor.value);
+    await prefs.setString('themeMode', _themeMode.toString());
+  }
+
+  void changeColor(Color color) {
+    setState(() {
+      _themeColor = color;
+    });
+  }
+
+  void changeTheme(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  MyHomePage(
+      {super.key,
+      required this.title,
+      required this.outerTheme,
+      required this.color});
 
   final String title;
+  ThemeMode outerTheme;
+  Color color;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<Schedule> data;
-  late String group;
+  Future<Map<String, List<Schedule>>>? data;
+  Map<String, List<Schedule>>? filteredData;
+  Map<String, List<Schedule>>? onlineData;
+  String? group;
   bool isDark = false;
+  TextEditingController searchController = TextEditingController();
+  TextEditingController _controller = TextEditingController();
+  String dropdownValue = list.first;
+  late Color tempColor;
+
+  List<bool> _selectedTheme = <bool>[true, false, false];
 
   @override
   void initState() {
+    tempColor = widget.color;
+    isDark = true;
+    _controller.addListener(_onTextChanged);
     super.initState();
-    group = '121111';
-
-    data = getScheduleLocal(group);
-    updateSchedule();
-
+    loadGroup();
+    filteredData = {};
   }
 
-  Future<void> updateSchedule() async {
-    var scheduleString = await fetch(group);
-    saveScheduleLocally(scheduleString, group);
+  void _onTextChanged() {
+    final unfiltered = filteredData;
+    filteredData = {};
+    print('changed');
     setState(() {
-      data = getScheduleLocal(group);
+      for (var day in unfiltered!.keys) {
+        List<Schedule> ou = [];
+        for (var lesson in unfiltered[day]!) {
+          final prep = lesson.prep ?? "Неизвестно";
+          if (lesson.discipline.toLowerCase().contains(_controller.text) ||
+              lesson.kow.toLowerCase().contains(_controller.text) ||
+              prep.toLowerCase().contains(_controller.text)) {
+            ou.add(lesson);
+          }
+        }
+        if (ou.isNotEmpty) {
+          filteredData![day] = ou;
+        } else if (day.contains(_controller.text)) {
+          filteredData![day] = unfiltered[day]!;
+        }
+      }
     });
   }
 
-  List<ListTile> lesson(ClassSchedule day) {
-    List<ListTile> result = [];
-    for (var i = 0; i < day.classes.length; i++) {
-      result.add(ListTile(
-        title: Text('${day.classes[i].time} | ${day.classes[i].location}'),
-        leading: Column(
-          children: [
-            Text(day.classes[i].subject),
-            Text(day.classes[i].teacher),
-            Text(day.classes[i].type),
-          ],
-        ),
-      ));
+  Future<void> loadGroup() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final getGroup = prefs.getString('group_number');
+    if (getGroup != null) {
+      group = getGroup;
+      searchController.text = group!;
+      data = getScheduleLocal(group!);
+      updateSchedule();
+    } else {
+      showSearchDialog();
     }
-    return result;
+  }
+
+  Future<void> saveGroup(String newGroup) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('group_number', newGroup);
+  }
+
+  Future<void> updateSchedule() async {
+    if (group == null) return;
+
+    try {
+      var schedule = await getScheduleOnline(group!);
+      await saveScheduleLocal(group!, schedule);
+      setState(() {
+        onlineData = schedule;
+        data = getScheduleLocal(group!);
+      });
+    } catch (error) {
+      // Если ошибка при обновлении расписания, просто используем локальные данные
+      setState(() {
+        data = getScheduleLocal(group!);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    switch (MyApp.of(context)._themeMode) {
+      case ThemeMode.system:
+        _selectedTheme = [true, false, false];
+        isDark = MediaQuery.of(context).platformBrightness == Brightness.dark
+            ? true
+            : false;
 
+      case ThemeMode.dark:
+        isDark = true;
+        _selectedTheme = [false, true, false];
+      case ThemeMode.light:
+        _selectedTheme = [false, false, true];
+        isDark = false;
+    }
 
     return Scaffold(
-
       appBar: AppBar(
-        title: const Text('Расписание'),
+        // scrolledUnderElevation: 3,
+        shadowColor: Theme.of(context).colorScheme.shadow,
+        title: Row(
+          children: [
+            // const Text('Расписание'),
+            // Padding(padding: EdgeInsets.all(10)),
+            Expanded(
+
+              child: TextField(
+
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: "Найди нужные пары!",
+                ),
+                controller: _controller,
+              ),
+            ),
+          ],
+        ),
         actions: [
-          FutureBuilder<Schedule>(
-            future: data,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return IconButton(
-                  icon: const Icon(Icons.error),
-                  onPressed: () {
-                    // Обработка ошибки
-                  },
-                );
-              } else if (snapshot.hasData) {
-                final currentDate = DateTime.now();
-                final today = DateTime(currentDate.year, currentDate.month, currentDate.day);
-                Schedule filteredSchedule = Schedule(
-                  schedule: snapshot.data!.schedule
-                      .where((classSchedule) => classSchedule.date.compareTo(today) >= 0)
-                      .toList(),);
-                return IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    showSearch(
-                      context: context,
-                      delegate: ScheduleSearchDelegate(schedueles: filteredSchedule.schedule),
-                    );
-                  },
-                );
-              } else {
-                return Container();
+          IconButton(
+            onPressed: () {
+              if (group != null) {
+                updateSchedule();
               }
             },
+            icon: const Icon(
+              Icons.refresh,
+            ),
+          ),
+          IconButton(
+            onPressed: showSearchDialog,
+            style: const ButtonStyle(),
+            icon: const Icon(Icons.settings),
           ),
         ],
       ),
-      body: FutureBuilder<Schedule>(
-          future: data,
-          builder: (BuildContext context, AsyncSnapshot<Schedule> snapshot) {
-            if (snapshot.hasData) {
-              Schedule schedule = snapshot.data!;
+      body: group == null
+          ? const Center(child: Text('Введите группу'))
+          : FutureBuilder<Map<String, List<Schedule>>>(
+              future: data,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No schedule available'));
+                } else {
+                  // final sc = snapshot.data!;
+                  if (_controller.text.isEmpty) {
+                    filteredData = filterToday(snapshot.data!);
+                  }
 
-              // Фильтрация по дате
-              final currentDate = DateTime.now();
-              final today = DateTime(currentDate.year, currentDate.month, currentDate.day);
-              Schedule filteredSchedule = Schedule(
-                schedule: snapshot.data!.schedule
-                    .where((classSchedule) => classSchedule.date.compareTo(today) >= 0)
-                    .toList(),);
+                  final keys = filteredData!.keys.toList();
 
-              return ListView.builder(
-                itemCount: filteredSchedule.schedule.length,
-                itemBuilder: (context, index) {
-                  ClassSchedule classSchedule = filteredSchedule.schedule[index];
-                  return ListTile(
-                    title: Text('(${weekIvenOdd(filteredSchedule.schedule[index].date)}) ${filteredSchedule.schedule[index].date.day}.${filteredSchedule.schedule[index].date.month} ${getWeekDayString(filteredSchedule.schedule[index].date)}'),
-                    subtitle: Column(
-                      children: classSchedule.classes.map((classDetail) {
-                        ClassSchedule classSchedule = schedule.schedule[index];
-                        return ListTile(
-                          title: Text(
-                              '${classDetail.time} | ${classDetail.location}'),
-                          subtitle: Text(
-                              '${classDetail.subject} - ${classDetail.type}\n${classDetail.teacher}'),
-                        );
-                      }).toList(),
-                    ),
+                  return ListView.builder(
+                    itemCount: filteredData!.keys.length,
+                    itemBuilder: (context, index) {
+                      return Column(
+                        children: buildDay(filteredData!, keys, index, isDark,
+                            MyApp.of(context)._themeColor),
+                      );
+                    },
                   );
-                },
-              );
-            } else {
-              return const CircularProgressIndicator();
-            }
-          }),
+                }
+              },
+            ),
+    );
+  }
+
+  Map<String, List<Schedule>> filterToday(
+      Map<String, List<Schedule>> unfilteredDate) {
+    final today = DateTime.now();
+
+    return Map.fromEntries(unfilteredDate.entries.where((element) =>
+        today.isBefore(parseDate(element.key)) ||
+        today == parseDate(element.key)));
+  }
+
+  void showSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Введите номер группы'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                // Добавьте mainAxisSize для правильной компоновки
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      // contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                      hintText: 'например: 70349аф',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(15))),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ToggleButtons(
+                        direction: Axis.horizontal,
+                        isSelected: _selectedTheme,
+                        onPressed: (int index) {
+                          setState(() {
+                            for (int i = 0; i < _selectedTheme.length; i++) {
+                              _selectedTheme[i] = i == index;
+                              if (i == index) {
+                                final theme = list[i];
+                                if (theme == "Системная") {
+                                  MyApp.of(context)
+                                      .changeTheme(ThemeMode.system);
+                                  isDark = MediaQuery.of(context)
+                                              .platformBrightness ==
+                                          Brightness.dark
+                                      ? true
+                                      : false;
+                                } else if (theme == "Темная") {
+                                  MyApp.of(context).changeTheme(ThemeMode.dark);
+                                  isDark = true;
+                                } else if (theme == "Светлая") {
+                                  MyApp.of(context)
+                                      .changeTheme(ThemeMode.light);
+                                  isDark = false;
+                                }
+                                // Сохранение состояния темы
+                                MyApp.of(context)._saveThemeSettings();
+                              }
+                            }
+                          });
+                        },
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(25)),
+                        constraints: const BoxConstraints(
+                          minHeight: 40.0,
+                          minWidth: 80.0,
+                        ),
+                        children: Wlist,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+
+                  // Выбор цветовой схемы
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.deepPurple,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.deepPurple,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.deepOrangeAccent,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.deepOrangeAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.yellow,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.yellow,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.pink,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.pink,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.green,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio<Color>(
+                            value: Colors.blue,
+                            groupValue: tempColor,
+                            onChanged: (color) {
+                              tempColor = color!;
+
+                              MyApp.of(context).changeColor(tempColor);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Добавляем отступ между радио-кнопкой и контейнером
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            width: 25,
+                            height: 25,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Отмена'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      group = searchController.text;
+                      saveGroup(group!);
+                      data = getScheduleLocal(group!);
+                      updateSchedule();
+                      MyApp.of(context)._saveThemeSettings();
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Сохранить'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget showSettings() {
+    return SafeArea(
+      child: Scaffold(
+        body: Column(
+          children: [
+            TextField(
+              controller: searchController,
+              decoration: const InputDecoration(hintText: 'группа'),
+            ),
+            DropdownButton<String>(
+              value: dropdownValue,
+              onChanged: (String? value) {
+                // This is called when the user selects an item.
+                setState(() {
+                  dropdownValue = value!;
+                });
+              },
+              items: list.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
