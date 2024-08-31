@@ -1,24 +1,24 @@
-import 'dart:math';
-import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
+// import 'dart:ui';
+
+// import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'classes.dart';
 import 'fetch.dart';
-import 'dayWidget.dart';
+import 'day_widget.dart';
 
 const List<String> list = <String>['Системная', 'Темная', 'Светлая'];
-const List<Widget> Wlist = <Widget>[
+const List<Widget> wList = <Widget>[
   Icon(Icons.brightness_4),
   Icon(Icons.brightness_3_outlined),
   Icon(Icons.light_mode),
 ];
 
 void main() {
-  runApp(const MyApp());
+  runApp( const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -35,6 +35,7 @@ class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
   Color _themeColor = Colors.deepPurple;
 
+  @override
   void initState() {
     super.initState();
     _loadThemeSettings(); // Загружаем сохранённые настройки
@@ -124,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String? group;
   bool isDark = false;
   TextEditingController searchController = TextEditingController();
-  TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
   String dropdownValue = list.first;
   late Color tempColor;
 
@@ -143,7 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onTextChanged() {
     final unfiltered = filteredData;
     filteredData = {};
-    print('changed');
+    // print('changed');
     setState(() {
       for (var day in unfiltered!.keys) {
         List<Schedule> ou = [];
@@ -364,7 +365,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           minHeight: 40.0,
                           minWidth: 80.0,
                         ),
-                        children: Wlist,
+                        children: wList,
                       ),
                     ],
                   ),

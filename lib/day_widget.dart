@@ -39,26 +39,26 @@ final lightColors = {
 };
 
 final darkColors = {
-  "Практические занятия": Color(0xFF4C5E4C),
-  "Практические занятия по иностранному языку (английский)": Color(0xFF4C5E4C),
-  "Практические занятия по иностранному языку (французский)": Color(0xFF4C5E4C),
-  "Практические занятия по иностранному языку (немецкий)": Color(0xFF4C5E4C),
-  "Практ. клинические (14 чел)": Color(0xFF4C5E4C),
-  "Практ. клинические": Color(0xFF4C5E4C),
-  "Лаб.  занятия - 17": Color(0xFF6E5643),
-  "Лаб.  занятия - 14": Color(0xFF6E5643),
-  "Лабораторные работы": Color(0xFF6E5643),
-  "Лаборат. занятия Лечебного факультета":Color(0xFF6E5643),
-  "Лекционные занятия": Color(0xFF3C5675),
-  "Лекции 170 чел": Color(0xFF3C5675),
-  "Практика": Color(0xFF752F2F),
-  "зч":  Color(0xFF752F2F),
-  "ДЗ по практике":  Color(0xFF752F2F),
-  "ДЗ":  Color(0xFF752F2F),
-  "Экзамен":  Color(0xFF752F2F),
-  "КР":  Color(0xFF752F2F),
-  "КП":  Color(0xFF752F2F),
-  "Консультации":Color(0xFF752F2F),
+  "Практические занятия": const Color(0xFF4C5E4C),
+  "Практические занятия по иностранному языку (английский)": const Color(0xFF4C5E4C),
+  "Практические занятия по иностранному языку (французский)": const Color(0xFF4C5E4C),
+  "Практические занятия по иностранному языку (немецкий)": const Color(0xFF4C5E4C),
+  "Практ. клинические (14 чел)": const Color(0xFF4C5E4C),
+  "Практ. клинические": const Color(0xFF4C5E4C),
+  "Лаб.  занятия - 17": const Color(0xFF6E5643),
+  "Лаб.  занятия - 14": const Color(0xFF6E5643),
+  "Лабораторные работы": const Color(0xFF6E5643),
+  "Лаборат. занятия Лечебного факультета":const Color(0xFF6E5643),
+  "Лекционные занятия": const Color(0xFF3C5675),
+  "Лекции 170 чел": const Color(0xFF3C5675),
+  "Практика": const Color(0xFF752F2F),
+  "зч":  const Color(0xFF752F2F),
+  "ДЗ по практике":  const Color(0xFF752F2F),
+  "ДЗ":  const Color(0xFF752F2F),
+  "Экзамен":  const Color(0xFF752F2F),
+  "КР":  const Color(0xFF752F2F),
+  "КП":  const Color(0xFF752F2F),
+  "Консультации":const Color(0xFF752F2F),
 };
 
 
@@ -102,26 +102,7 @@ Widget lesson(Schedule schedule, bool isDark) {
   final detail = "${schedule.discipline}\n${schedule.kow}\n${schedule.prep ?? "Неизвестно"}";
   final color = colorize(schedule.kow, isDark); // Оптимизация: сохранение цвета в переменную
 
-  // return ListTile(
-  //
-  //   title: Container(
-  //     padding: const EdgeInsets.only(left: 10, top: 10, right: 10),
-  //     decoration:  BoxDecoration(
-  //       color: colorize(schedule.kow, isDark),
-  //       borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))
-  //     ),
-  //
-  //     child: Text("${schedule.time} | ${schedule.aud}"),
-  //   ),
-  //   subtitle: Container(
-  //     padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
-  //     decoration:  BoxDecoration(
-  //       color: colorize(schedule.kow, isDark),
-  //       borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))
-  //     ),
-  //     child: Text(detail),
-  //   ),
-  // );
+
 
   return ListTile(
     title: DecoratedBox( // Используем DecoratedBox вместо Container
@@ -165,7 +146,7 @@ bool isWeekEven(DateTime date) {
 
   // Находим первый понедельник года (можно настроить на любой день)
   while (startOfYear.weekday != DateTime.monday) {
-    startOfYear = startOfYear.add(Duration(days: 1));
+    startOfYear = startOfYear.add(const Duration(days: 1));
   }
 
   // Рассчитываем разницу в днях между началом года и текущей датой
@@ -179,7 +160,7 @@ bool isWeekEven(DateTime date) {
 }
 
 String getNiceDate(String sdate){
-  // final s = sdate.split('.');
+
   DateTime date = parseDate(sdate);
   if(isWeekEven(date)){
     return "(чт) ${sdate.substring(0,6)} ${week[date.weekday]}";
@@ -223,20 +204,7 @@ Widget buildDate(List<String> keys, int index, bool isDark, Color color){
   );
 
 
-  // final colorScheme = ColorScheme.fromSeed(brightness: isDark ? Brightness.dark : Brightness.light, seedColor: color);
-  // return ListTile(
-  //
-  //   title: Container(
-  //     padding: EdgeInsets.all(5),
-  //     decoration: BoxDecoration(
-  //       color: isDark ? colorScheme.primary.withAlpha(50) : colorScheme.primary.withAlpha(30),
-  //       borderRadius: BorderRadius.all(Radius.circular(20)),
-  //     ),
-  //     child: Center(
-  //       child: Text(getNiceDate(keys[index])),
-  //     ),
-  //   ),
-  // );
+
 
 
 

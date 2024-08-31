@@ -49,12 +49,12 @@ Map<String, List<Schedule>> getSortedMap(String unsortedString) {
 
   // Шаг 5: Добавить пустые даты в диапазоне от minDate до maxDate
   DateTime currentDate = minDate;
-  while (currentDate.isBefore(maxDate.add(Duration(days: 1)))) {
+  while (currentDate.isBefore(maxDate.add(const Duration(days: 1)))) {
     String formattedDate = _formatDate(currentDate);
     if (!scheduleMap.containsKey(formattedDate)) {
       scheduleMap[formattedDate] = [];
     }
-    currentDate = currentDate.add(Duration(days: 1));
+    currentDate = currentDate.add(const Duration(days: 1));
   }
 
   // Шаг 4: Отсортировать map по датам
@@ -100,7 +100,7 @@ Future<void> saveScheduleLocal(
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   String sortedString = getSortedString(sortedListMap);
   prefs.setString(group, sortedString);
-  print(sortedString);
+  // print(sortedString);
 }
 
 Future<Map<String, List<Schedule>>> getScheduleLocal(String group) async {
