@@ -222,6 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // scrolledUnderElevation: 3,
         shadowColor: Theme.of(context).colorScheme.shadow,
+
         title: Row(
           children: [
             // const Text('Расписание'),
@@ -232,13 +233,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration:  InputDecoration(
 
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.onInverseSurface,
-                  border: OutlineInputBorder(
+                  fillColor: Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
+                  border: const OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.all(Radius.circular(25)),
                   ),
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                   hintText: "Найди нужные пары!",
 
                 ),
