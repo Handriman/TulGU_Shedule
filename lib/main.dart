@@ -1,10 +1,13 @@
-
 // import 'dart:ui';
 
 // import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 
 import 'classes.dart';
 import 'fetch.dart';
@@ -18,7 +21,7 @@ const List<Widget> wList = <Widget>[
 ];
 
 void main() {
-  runApp( const MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -130,15 +133,56 @@ class _MyHomePageState extends State<MyHomePage> {
   late Color tempColor;
 
   List<bool> _selectedTheme = <bool>[true, false, false];
+  String currentVersion = 'v1.0.1';
+  String? latestVersion;
 
   @override
   void initState() {
     tempColor = widget.color;
+
     isDark = true;
     _controller.addListener(_onTextChanged);
     super.initState();
     loadGroup();
+    _checkForUpdate();
     filteredData = {};
+  }
+
+  _checkForUpdate() async {
+    final response = await http.get(Uri.parse(
+        'https://api.github.com/repos/Handriman/TulGU_Shedule/releases/latest'));
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      setState(() {
+        latestVersion = jsonResponse['tag_name'];
+      });
+
+      if (latestVersion != null && latestVersion != currentVersion) {
+        _showUpdateBanner();
+      }
+    }
+  }
+
+  void _showUpdateBanner() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 10),
+        content: Text('Доступна новая версия $latestVersion!'),
+        action: SnackBarAction(
+          label: 'Обновить',
+          onPressed: _launchURL,
+        ),
+      ),
+    );
+  }
+
+  _launchURL() async {
+    final Uri url =
+        Uri.parse('https://github.com/Handriman/TulGU_Shedule/releases');
+    if (!await launchUrl(url)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   void _onTextChanged() {
@@ -228,20 +272,21 @@ class _MyHomePageState extends State<MyHomePage> {
             // const Text('Расписание'),
             // Padding(padding: EdgeInsets.all(10)),
             Expanded(
-
               child: TextField(
-                decoration:  InputDecoration(
-
+                decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceTint.withOpacity(0.1),
+                  fillColor: Theme.of(context)
+                      .colorScheme
+                      .surfaceTint
+                      .withOpacity(0.1),
                   border: const OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.all(Radius.circular(25)),
                   ),
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                   hintText: "Найди нужные пары!",
-
                 ),
                 controller: _controller,
               ),
@@ -306,7 +351,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Map.fromEntries(unfilteredDate.entries.where((element) =>
         today.isBefore(parseDate(element.key)) ||
-        today == parseDate(element.key)));
+        today.difference(parseDate(element.key)).inDays == 0));
   }
 
   void showSearchDialog() {
