@@ -133,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late Color tempColor;
 
   List<bool> _selectedTheme = <bool>[true, false, false];
-  String currentVersion = 'v1.0.1';
+  String currentVersion = 'v1.0.2';
   String? latestVersion;
 
   @override
