@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<String> fetchString(String group, ) async {
   final url = Uri.parse('https://tulsu.ru/schedule/queries/GetSchedule.php');
   String type = '';
-  if (group.contains('-')) { type = 'AUD'; } else { type = 'GROUP_P'; }
+  // if (group.contains('-')) { type = 'AUD'; } else { type = 'GROUP_P'; }
+  type = 'GROUP_P';
   final Map<String, String> requestBody = {
     'search_field': type,
     'search_value': group,
@@ -21,6 +22,44 @@ Future<String> fetchString(String group, ) async {
     return '{}';
   }
 }
+
+Future<String> fetchProfString(String fullProfNa) async {
+  final url = Uri.parse('https://tulsu.ru/schedule/queries/GetSchedule.php');
+  String type = '';
+  // if (group.contains('-')) { type = 'AUD'; } else { type = 'GROUP_P'; }
+  type = 'PREP';
+  final Map<String, String> requestBody = {
+    'search_field': type,
+    'search_value': fullProfNa,
+  };
+  http.Response response = await http.post(url, body: requestBody);
+  if (response.statusCode == 200) {
+    String decodedString = utf8.decode(response.bodyBytes);
+
+    return decodedString;
+  } else {
+    https://tulsu.ru/schedule/queries/GetSchedule.php?search_field=PREP&search_value=%D0%9C%D0%B0%D1%82%D0%B2%D0%B5%D0%B5%D0%B2%20%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%20%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%B8%D1%87
+    return '{}';
+  }
+}
+
+Future<String> fetchProfName(String uncompleteProfName) async {
+  final url = Uri.parse("https://tulsu.ru/schedule/queries/GetDictionaries.php?term=$uncompleteProfName");
+  http.Response response = await http.get(url);
+  if(response.statusCode == 200) {
+    String decodedString = utf8.decode(response.bodyBytes);
+    return decodedString;
+  } else {
+    return '{}';
+  }
+
+}
+
+List<String> getProfNamesList(String decodedString) {
+  List<dynamic> namesList = jsonDecode(decodedString);
+  return namesList.map((e) => e['value'] as String).toList();
+}
+
 
 Map<String, List<Schedule>> getSortedMap(String unsortedString) {
   // Шаг 1: Распарсить JSON строку
@@ -118,6 +157,11 @@ Future<Map<String, List<Schedule>>> getScheduleLocal(String group) async {
 
 Future<Map<String, List<Schedule>>> getScheduleOnline(String group) async{
   String unsortedString = await fetchString(group);
+  return getSortedMap(unsortedString);
+}
+
+Future<Map<String, List<Schedule>>> getProfScheduleOnline(String profFullName) async{
+  String unsortedString = await fetchProfString(profFullName);
   return getSortedMap(unsortedString);
 }
 

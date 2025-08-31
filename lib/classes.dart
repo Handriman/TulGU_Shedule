@@ -28,7 +28,9 @@ class Schedule {
       kow: json['KOW'],
       aud: json['AUD'],
       prep: json['PREP'],
-      groups: List<Map<String, String>>.from(json['GROUPS'].map((group) => Map<String, String>.from(group))),
+      groups: List<Map<String, String>>.from(
+        json['GROUPS'].map((group) => Map<String, String>.from(group)),
+      ),
       classType: json['CLASS'],
     );
   }
@@ -45,4 +47,8 @@ class Schedule {
       'CLASS': classType,
     };
   }
+
+  /// 🔑 Склеиваем группы в строку
+  String get groupsAsString =>
+      groups.map((g) => g['GROUP_P']).whereType<String>().join(', ');
 }

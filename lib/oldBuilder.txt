@@ -1,0 +1,56 @@
+return Builder(builder: (context){
+      return Scaffold(
+        appBar: AppBar(
+          title:
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const ThemeSwitcher(),
+            const SizedBox(
+              width: 20,
+            ),
+            Expanded(
+              child: TextField(
+                textInputAction: TextInputAction.search,
+                onChanged: (String value) {
+                  finder = value;
+                  findMe(true);
+                  // setState(() {});
+                },
+                decoration: const InputDecoration(
+                  hintText: 'Я помогу в поиске',
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                ),
+              ),)
+          ],),
+        ),
+        body: Center(
+          child: (finalSchedule.isEmpty )
+              ? const CircularProgressIndicator()
+              : Align(
+              alignment: Alignment.topLeft,
+              child: ListView(
+                // itemExtent: 700,
+                children: [
+                  // Text(currentDate.toString()),
+                  for (var el in finalSchedule.keys) ...[
+                    if (dataCompare(currentDate, stringDateToTypeDate(el)) ==
+                        true)
+                      Column(
+                        children: [
+                          dayTitle(el, finalSchedule[el]!, context, calendar),
+                          for (var i = 0;
+                          i < finalSchedule[el]!.length;
+                          i++) ...[
+                            dayLesson(widget.themeProvider,
+                                finalSchedule[el]![i], finalSchedule, context)
+                          ],
+                        ],
+                      )
+                  ]
+                ],
+              )),
+        ),
+      );
+    });
