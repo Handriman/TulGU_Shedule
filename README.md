@@ -15,11 +15,10 @@
 
 ## Скриншоты приложения
 
-Главный экран:  
-![Главный экран](assets/screenshots/s1.png)
+<img src="assets/screenshots/s1.png" width="300"/>
+<img src="assets/screenshots/s3.png" width="300"/>
 
-Окно настроек:  
-![Окно настроек](assets/screenshots/s3.png)
+
 
 ## Использование
 
