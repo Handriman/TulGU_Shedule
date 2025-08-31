@@ -15,7 +15,7 @@
 
 ## Скриншоты приложения
 
-<img src="assets/screenshots/s1.png" width="300"/> <img src="assets/screenshots/s3.png" width="300"/>
+<img src="assets/screenshots/s1.png" width="250"/> <img src="assets/screenshots/s3.png" width="250"/>
 
 
 
